@@ -1,0 +1,81 @@
+@page "/invoiceline"
+@inject HttpClient client
+@using Syncfusion.Blazor.Grids
+@using MyApp6
+@using MyApp6.Shared.Model
+
+<h3>InvoiceLine</h3>
+
+<div class="col-lg-12 control-section">
+    <div class="content-wrapper">
+        <div class="row">
+
+            <SfGrid DataSource="@invoicelines" Toolbar="@(new List<string> {"Add","Edit","Delete","Update","Cancel","Print" })"AllowExcelExport = "true" AllowPdfExport= "true" ContextMenuItems="@(new List<object>() { "AutoFit","AutoFitAll","SortAscending","SortDescending","Copy","Edit","Delete","Save","Cancel","PdfExport","ExcelExport","CsvExport","FirstPage","PrevPage","LastPage","NextPage"})" GridLines="GridLine.Both" AllowGrouping="true" AllowPaging="true">
+                <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" ShowDeleteConfirmDialog="true" Mode="EditMode.Dialog"></GridEditSettings>
+                <GridEvents OnActionBegin="ActionBegin" OnActionComplete="OnActionComplete" TValue="InvoiceLine"></GridEvents>
+                    <GridColumns>
+                    <GridColumn  Field=@nameof(InvoiceLine.InvoiceLineId) IsPrimaryKey="true" Visible="false" AllowEditing="false" HeaderText="Invoice line id" Width="150"></GridColumn>
+                    <GridForeignColumn  Field=@nameof(InvoiceLine.InvoiceId) HeaderText="Invoice id" ForeignKeyValue="BillingAddress" ForeignDataSource="@LookupInvoice" Width="150"></GridForeignColumn>
+                    <GridForeignColumn  Field=@nameof(InvoiceLine.TrackId) HeaderText="Track id" ForeignKeyValue="Name" ForeignDataSource="@LookupTrack" Width="150"></GridForeignColumn>
+                    <GridColumn  Field=@nameof(InvoiceLine.UnitPrice) HeaderText="Unit price" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(InvoiceLine.Quantity) HeaderText="Quantity" Width="150"></GridColumn>
+                </GridColumns>
+            </SfGrid>
+        </div>
+    </div>
+</div>
+     
+     
+@code {
+
+    public List<InvoiceLine> invoicelines { get; set; }
+    public List<Invoice> LookupInvoice { get; set; }
+public List<Track> LookupTrack { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        invoicelines = await client.GetFromJsonAsync<List<InvoiceLine>>("api/invoiceline");
+        LookupInvoice = await client.GetFromJsonAsync<List<Invoice>>("api/invoice");
+LookupTrack = await client.GetFromJsonAsync<List<Track>>("api/track");
+    }
+
+    public async Task ActionBegin(ActionEventArgs<InvoiceLine> args)
+    {
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+        {
+            var objInvoiceLine = new InvoiceLine();
+            objInvoiceLine.InvoiceLineId = args.Data.InvoiceLineId;
+            objInvoiceLine.InvoiceId = args.Data.InvoiceId;
+            objInvoiceLine.TrackId = args.Data.TrackId;
+            objInvoiceLine.UnitPrice = args.Data.UnitPrice;
+            objInvoiceLine.Quantity = args.Data.Quantity;
+            
+            if (args.Data.InvoiceLineId == 0)
+            {
+                await client.PostAsJsonAsync("api/invoiceline", objInvoiceLine);
+                Console.WriteLine("Saved successfully");
+            }
+            else
+            {
+                await client.PutAsJsonAsync("api/invoiceline", objInvoiceLine);
+                Console.WriteLine("Updated successfully");
+            }
+ 
+        }
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Delete)
+        {
+            var id = args.Data.InvoiceLineId;
+            var res = await client.DeleteAsync($"api/invoiceline/{id}");
+            Console.WriteLine("Deleted successfully");
+        }
+    }
+
+    public async Task OnActionComplete(ActionEventArgs<InvoiceLine> Args)
+    {
+        if (Args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+        {
+            invoicelines = await client.GetFromJsonAsync<List<InvoiceLine>>("api/invoiceline");
+        }
+    }
+}
+
+

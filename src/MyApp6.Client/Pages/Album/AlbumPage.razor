@@ -1,0 +1,75 @@
+@page "/album"
+@inject HttpClient client
+@using Syncfusion.Blazor.Grids
+@using MyApp6
+@using MyApp6.Shared.Model
+
+<h3>Album</h3>
+
+<div class="col-lg-12 control-section">
+    <div class="content-wrapper">
+        <div class="row">
+
+            <SfGrid DataSource="@albums" Toolbar="@(new List<string> {"Add","Edit","Delete","Update","Cancel","Print" })"AllowExcelExport = "true" AllowPdfExport= "true" ContextMenuItems="@(new List<object>() { "AutoFit","AutoFitAll","SortAscending","SortDescending","Copy","Edit","Delete","Save","Cancel","PdfExport","ExcelExport","CsvExport","FirstPage","PrevPage","LastPage","NextPage"})" GridLines="GridLine.Both" AllowGrouping="true" AllowPaging="true">
+                <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" ShowDeleteConfirmDialog="true" Mode="EditMode.Dialog"></GridEditSettings>
+                <GridEvents OnActionBegin="ActionBegin" OnActionComplete="OnActionComplete" TValue="Album"></GridEvents>
+                    <GridColumns>
+                    <GridColumn  Field=@nameof(Album.AlbumId) IsPrimaryKey="true" Visible="false" AllowEditing="false" HeaderText="Album id" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Album.Title) HeaderText="Title" Width="150"></GridColumn>
+                    <GridForeignColumn  Field=@nameof(Album.ArtistId) HeaderText="Artist id" ForeignKeyValue="Name" ForeignDataSource="@LookupArtist" Width="150"></GridForeignColumn>
+                </GridColumns>
+            </SfGrid>
+        </div>
+    </div>
+</div>
+     
+     
+@code {
+
+    public List<Album> albums { get; set; }
+    public List<Artist> LookupArtist { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        albums = await client.GetFromJsonAsync<List<Album>>("api/album");
+        LookupArtist = await client.GetFromJsonAsync<List<Artist>>("api/artist");
+    }
+
+    public async Task ActionBegin(ActionEventArgs<Album> args)
+    {
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+        {
+            var objAlbum = new Album();
+            objAlbum.AlbumId = args.Data.AlbumId;
+            objAlbum.Title = args.Data.Title;
+            objAlbum.ArtistId = args.Data.ArtistId;
+            
+            if (args.Data.AlbumId == 0)
+            {
+                await client.PostAsJsonAsync("api/album", objAlbum);
+                Console.WriteLine("Saved successfully");
+            }
+            else
+            {
+                await client.PutAsJsonAsync("api/album", objAlbum);
+                Console.WriteLine("Updated successfully");
+            }
+ 
+        }
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Delete)
+        {
+            var id = args.Data.AlbumId;
+            var res = await client.DeleteAsync($"api/album/{id}");
+            Console.WriteLine("Deleted successfully");
+        }
+    }
+
+    public async Task OnActionComplete(ActionEventArgs<Album> Args)
+    {
+        if (Args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+        {
+            albums = await client.GetFromJsonAsync<List<Album>>("api/album");
+        }
+    }
+}
+
+

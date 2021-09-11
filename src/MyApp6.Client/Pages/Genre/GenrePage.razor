@@ -1,0 +1,73 @@
+@page "/genre"
+@inject HttpClient client
+@using Syncfusion.Blazor.Grids
+@using MyApp6
+@using MyApp6.Shared.Model
+
+<h3>Genre</h3>
+
+<div class="col-lg-12 control-section">
+    <div class="content-wrapper">
+        <div class="row">
+
+            <SfGrid DataSource="@genres" Toolbar="@(new List<string> {"Add","Edit","Delete","Update","Cancel","Print" })"AllowExcelExport = "true" AllowPdfExport= "true" ContextMenuItems="@(new List<object>() { "AutoFit","AutoFitAll","SortAscending","SortDescending","Copy","Edit","Delete","Save","Cancel","PdfExport","ExcelExport","CsvExport","FirstPage","PrevPage","LastPage","NextPage"})" GridLines="GridLine.Both" AllowGrouping="true" AllowPaging="true">
+                <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" ShowDeleteConfirmDialog="true" Mode="EditMode.Dialog"></GridEditSettings>
+                <GridEvents OnActionBegin="ActionBegin" OnActionComplete="OnActionComplete" TValue="Genre"></GridEvents>
+                    <GridColumns>
+                    <GridColumn  Field=@nameof(Genre.GenreId) IsPrimaryKey="true" Visible="false" AllowEditing="false" HeaderText="Genre id" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Genre.Name) HeaderText="Name" Width="150"></GridColumn>
+                </GridColumns>
+            </SfGrid>
+        </div>
+    </div>
+</div>
+     
+     
+@code {
+
+    public List<Genre> genres { get; set; }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        genres = await client.GetFromJsonAsync<List<Genre>>("api/genre");
+        
+    }
+
+    public async Task ActionBegin(ActionEventArgs<Genre> args)
+    {
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+        {
+            var objGenre = new Genre();
+            objGenre.GenreId = args.Data.GenreId;
+            objGenre.Name = args.Data.Name;
+            
+            if (args.Data.GenreId == 0)
+            {
+                await client.PostAsJsonAsync("api/genre", objGenre);
+                Console.WriteLine("Saved successfully");
+            }
+            else
+            {
+                await client.PutAsJsonAsync("api/genre", objGenre);
+                Console.WriteLine("Updated successfully");
+            }
+ 
+        }
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Delete)
+        {
+            var id = args.Data.GenreId;
+            var res = await client.DeleteAsync($"api/genre/{id}");
+            Console.WriteLine("Deleted successfully");
+        }
+    }
+
+    public async Task OnActionComplete(ActionEventArgs<Genre> Args)
+    {
+        if (Args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+        {
+            genres = await client.GetFromJsonAsync<List<Genre>>("api/genre");
+        }
+    }
+}
+
+

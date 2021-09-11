@@ -1,0 +1,73 @@
+@page "/artist"
+@inject HttpClient client
+@using Syncfusion.Blazor.Grids
+@using MyApp6
+@using MyApp6.Shared.Model
+
+<h3>Artist</h3>
+
+<div class="col-lg-12 control-section">
+    <div class="content-wrapper">
+        <div class="row">
+
+            <SfGrid DataSource="@artists" Toolbar="@(new List<string> {"Add","Edit","Delete","Update","Cancel","Print" })"AllowExcelExport = "true" AllowPdfExport= "true" ContextMenuItems="@(new List<object>() { "AutoFit","AutoFitAll","SortAscending","SortDescending","Copy","Edit","Delete","Save","Cancel","PdfExport","ExcelExport","CsvExport","FirstPage","PrevPage","LastPage","NextPage"})" GridLines="GridLine.Both" AllowGrouping="true" AllowPaging="true">
+                <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" ShowDeleteConfirmDialog="true" Mode="EditMode.Dialog"></GridEditSettings>
+                <GridEvents OnActionBegin="ActionBegin" OnActionComplete="OnActionComplete" TValue="Artist"></GridEvents>
+                    <GridColumns>
+                    <GridColumn  Field=@nameof(Artist.ArtistId) IsPrimaryKey="true" Visible="false" AllowEditing="false" HeaderText="Artist id" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Artist.Name) HeaderText="Name" Width="150"></GridColumn>
+                </GridColumns>
+            </SfGrid>
+        </div>
+    </div>
+</div>
+     
+     
+@code {
+
+    public List<Artist> artists { get; set; }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        artists = await client.GetFromJsonAsync<List<Artist>>("api/artist");
+        
+    }
+
+    public async Task ActionBegin(ActionEventArgs<Artist> args)
+    {
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+        {
+            var objArtist = new Artist();
+            objArtist.ArtistId = args.Data.ArtistId;
+            objArtist.Name = args.Data.Name;
+            
+            if (args.Data.ArtistId == 0)
+            {
+                await client.PostAsJsonAsync("api/artist", objArtist);
+                Console.WriteLine("Saved successfully");
+            }
+            else
+            {
+                await client.PutAsJsonAsync("api/artist", objArtist);
+                Console.WriteLine("Updated successfully");
+            }
+ 
+        }
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Delete)
+        {
+            var id = args.Data.ArtistId;
+            var res = await client.DeleteAsync($"api/artist/{id}");
+            Console.WriteLine("Deleted successfully");
+        }
+    }
+
+    public async Task OnActionComplete(ActionEventArgs<Artist> Args)
+    {
+        if (Args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+        {
+            artists = await client.GetFromJsonAsync<List<Artist>>("api/artist");
+        }
+    }
+}
+
+

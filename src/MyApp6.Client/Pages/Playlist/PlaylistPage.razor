@@ -1,0 +1,73 @@
+@page "/playlist"
+@inject HttpClient client
+@using Syncfusion.Blazor.Grids
+@using MyApp6
+@using MyApp6.Shared.Model
+
+<h3>Playlist</h3>
+
+<div class="col-lg-12 control-section">
+    <div class="content-wrapper">
+        <div class="row">
+
+            <SfGrid DataSource="@playlists" Toolbar="@(new List<string> {"Add","Edit","Delete","Update","Cancel","Print" })"AllowExcelExport = "true" AllowPdfExport= "true" ContextMenuItems="@(new List<object>() { "AutoFit","AutoFitAll","SortAscending","SortDescending","Copy","Edit","Delete","Save","Cancel","PdfExport","ExcelExport","CsvExport","FirstPage","PrevPage","LastPage","NextPage"})" GridLines="GridLine.Both" AllowGrouping="true" AllowPaging="true">
+                <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" ShowDeleteConfirmDialog="true" Mode="EditMode.Dialog"></GridEditSettings>
+                <GridEvents OnActionBegin="ActionBegin" OnActionComplete="OnActionComplete" TValue="Playlist"></GridEvents>
+                    <GridColumns>
+                    <GridColumn  Field=@nameof(Playlist.PlaylistId) IsPrimaryKey="true" Visible="false" AllowEditing="false" HeaderText="Playlist id" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Playlist.Name) HeaderText="Name" Width="150"></GridColumn>
+                </GridColumns>
+            </SfGrid>
+        </div>
+    </div>
+</div>
+     
+     
+@code {
+
+    public List<Playlist> playlists { get; set; }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        playlists = await client.GetFromJsonAsync<List<Playlist>>("api/playlist");
+        
+    }
+
+    public async Task ActionBegin(ActionEventArgs<Playlist> args)
+    {
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+        {
+            var objPlaylist = new Playlist();
+            objPlaylist.PlaylistId = args.Data.PlaylistId;
+            objPlaylist.Name = args.Data.Name;
+            
+            if (args.Data.PlaylistId == 0)
+            {
+                await client.PostAsJsonAsync("api/playlist", objPlaylist);
+                Console.WriteLine("Saved successfully");
+            }
+            else
+            {
+                await client.PutAsJsonAsync("api/playlist", objPlaylist);
+                Console.WriteLine("Updated successfully");
+            }
+ 
+        }
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Delete)
+        {
+            var id = args.Data.PlaylistId;
+            var res = await client.DeleteAsync($"api/playlist/{id}");
+            Console.WriteLine("Deleted successfully");
+        }
+    }
+
+    public async Task OnActionComplete(ActionEventArgs<Playlist> Args)
+    {
+        if (Args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+        {
+            playlists = await client.GetFromJsonAsync<List<Playlist>>("api/playlist");
+        }
+    }
+}
+
+

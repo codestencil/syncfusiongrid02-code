@@ -1,0 +1,73 @@
+@page "/mediatype"
+@inject HttpClient client
+@using Syncfusion.Blazor.Grids
+@using MyApp6
+@using MyApp6.Shared.Model
+
+<h3>MediaType</h3>
+
+<div class="col-lg-12 control-section">
+    <div class="content-wrapper">
+        <div class="row">
+
+            <SfGrid DataSource="@mediatypes" Toolbar="@(new List<string> {"Add","Edit","Delete","Update","Cancel","Print" })"AllowExcelExport = "true" AllowPdfExport= "true" ContextMenuItems="@(new List<object>() { "AutoFit","AutoFitAll","SortAscending","SortDescending","Copy","Edit","Delete","Save","Cancel","PdfExport","ExcelExport","CsvExport","FirstPage","PrevPage","LastPage","NextPage"})" GridLines="GridLine.Both" AllowGrouping="true" AllowPaging="true">
+                <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" ShowDeleteConfirmDialog="true" Mode="EditMode.Dialog"></GridEditSettings>
+                <GridEvents OnActionBegin="ActionBegin" OnActionComplete="OnActionComplete" TValue="MediaType"></GridEvents>
+                    <GridColumns>
+                    <GridColumn  Field=@nameof(MediaType.MediaTypeId) IsPrimaryKey="true" Visible="false" AllowEditing="false" HeaderText="Media type id" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(MediaType.Name) HeaderText="Name" Width="150"></GridColumn>
+                </GridColumns>
+            </SfGrid>
+        </div>
+    </div>
+</div>
+     
+     
+@code {
+
+    public List<MediaType> mediatypes { get; set; }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        mediatypes = await client.GetFromJsonAsync<List<MediaType>>("api/mediatype");
+        
+    }
+
+    public async Task ActionBegin(ActionEventArgs<MediaType> args)
+    {
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+        {
+            var objMediaType = new MediaType();
+            objMediaType.MediaTypeId = args.Data.MediaTypeId;
+            objMediaType.Name = args.Data.Name;
+            
+            if (args.Data.MediaTypeId == 0)
+            {
+                await client.PostAsJsonAsync("api/mediatype", objMediaType);
+                Console.WriteLine("Saved successfully");
+            }
+            else
+            {
+                await client.PutAsJsonAsync("api/mediatype", objMediaType);
+                Console.WriteLine("Updated successfully");
+            }
+ 
+        }
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Delete)
+        {
+            var id = args.Data.MediaTypeId;
+            var res = await client.DeleteAsync($"api/mediatype/{id}");
+            Console.WriteLine("Deleted successfully");
+        }
+    }
+
+    public async Task OnActionComplete(ActionEventArgs<MediaType> Args)
+    {
+        if (Args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+        {
+            mediatypes = await client.GetFromJsonAsync<List<MediaType>>("api/mediatype");
+        }
+    }
+}
+
+

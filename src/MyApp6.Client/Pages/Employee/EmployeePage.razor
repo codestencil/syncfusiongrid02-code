@@ -1,0 +1,99 @@
+@page "/employee"
+@inject HttpClient client
+@using Syncfusion.Blazor.Grids
+@using MyApp6
+@using MyApp6.Shared.Model
+
+<h3>Employee</h3>
+
+<div class="col-lg-12 control-section">
+    <div class="content-wrapper">
+        <div class="row">
+
+            <SfGrid DataSource="@employees" Toolbar="@(new List<string> {"Add","Edit","Delete","Update","Cancel","Print" })"AllowExcelExport = "true" AllowPdfExport= "true" ContextMenuItems="@(new List<object>() { "AutoFit","AutoFitAll","SortAscending","SortDescending","Copy","Edit","Delete","Save","Cancel","PdfExport","ExcelExport","CsvExport","FirstPage","PrevPage","LastPage","NextPage"})" GridLines="GridLine.Both" AllowGrouping="true" AllowPaging="true">
+                <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" ShowDeleteConfirmDialog="true" Mode="EditMode.Dialog"></GridEditSettings>
+                <GridEvents OnActionBegin="ActionBegin" OnActionComplete="OnActionComplete" TValue="Employee"></GridEvents>
+                    <GridColumns>
+                    <GridColumn  Field=@nameof(Employee.EmployeeId) IsPrimaryKey="true" Visible="false" AllowEditing="false" HeaderText="Employee id" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Employee.LastName) HeaderText="Last name" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Employee.FirstName) HeaderText="First name" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Employee.Title) HeaderText="Title" Width="150"></GridColumn>
+                    <GridForeignColumn  Field=@nameof(Employee.ReportsTo) HeaderText="Reports to" ForeignKeyValue="LastName" ForeignDataSource="@LookupEmployee" Width="150"></GridForeignColumn>
+                    <GridColumn  Field=@nameof(Employee.BirthDate) HeaderText="Birth date" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Employee.HireDate) HeaderText="Hire date" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Employee.Address) HeaderText="Address" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Employee.City) HeaderText="City" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Employee.State) HeaderText="State" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Employee.Country) HeaderText="Country" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Employee.PostalCode) HeaderText="Postal code" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Employee.Phone) HeaderText="Phone" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Employee.Fax) HeaderText="Fax" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Employee.Email) HeaderText="Email" Width="150"></GridColumn>
+                </GridColumns>
+            </SfGrid>
+        </div>
+    </div>
+</div>
+     
+     
+@code {
+
+    public List<Employee> employees { get; set; }
+    public List<Employee> LookupEmployee { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        employees = await client.GetFromJsonAsync<List<Employee>>("api/employee");
+        LookupEmployee = await client.GetFromJsonAsync<List<Employee>>("api/employee");
+    }
+
+    public async Task ActionBegin(ActionEventArgs<Employee> args)
+    {
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+        {
+            var objEmployee = new Employee();
+            objEmployee.EmployeeId = args.Data.EmployeeId;
+            objEmployee.LastName = args.Data.LastName;
+            objEmployee.FirstName = args.Data.FirstName;
+            objEmployee.Title = args.Data.Title;
+            objEmployee.ReportsTo = args.Data.ReportsTo;
+            objEmployee.BirthDate = args.Data.BirthDate;
+            objEmployee.HireDate = args.Data.HireDate;
+            objEmployee.Address = args.Data.Address;
+            objEmployee.City = args.Data.City;
+            objEmployee.State = args.Data.State;
+            objEmployee.Country = args.Data.Country;
+            objEmployee.PostalCode = args.Data.PostalCode;
+            objEmployee.Phone = args.Data.Phone;
+            objEmployee.Fax = args.Data.Fax;
+            objEmployee.Email = args.Data.Email;
+            
+            if (args.Data.EmployeeId == 0)
+            {
+                await client.PostAsJsonAsync("api/employee", objEmployee);
+                Console.WriteLine("Saved successfully");
+            }
+            else
+            {
+                await client.PutAsJsonAsync("api/employee", objEmployee);
+                Console.WriteLine("Updated successfully");
+            }
+ 
+        }
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Delete)
+        {
+            var id = args.Data.EmployeeId;
+            var res = await client.DeleteAsync($"api/employee/{id}");
+            Console.WriteLine("Deleted successfully");
+        }
+    }
+
+    public async Task OnActionComplete(ActionEventArgs<Employee> Args)
+    {
+        if (Args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+        {
+            employees = await client.GetFromJsonAsync<List<Employee>>("api/employee");
+        }
+    }
+}
+
+

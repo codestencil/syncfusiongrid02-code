@@ -1,0 +1,91 @@
+@page "/track"
+@inject HttpClient client
+@using Syncfusion.Blazor.Grids
+@using MyApp6
+@using MyApp6.Shared.Model
+
+<h3>Track</h3>
+
+<div class="col-lg-12 control-section">
+    <div class="content-wrapper">
+        <div class="row">
+
+            <SfGrid DataSource="@tracks" Toolbar="@(new List<string> {"Add","Edit","Delete","Update","Cancel","Print" })"AllowExcelExport = "true" AllowPdfExport= "true" ContextMenuItems="@(new List<object>() { "AutoFit","AutoFitAll","SortAscending","SortDescending","Copy","Edit","Delete","Save","Cancel","PdfExport","ExcelExport","CsvExport","FirstPage","PrevPage","LastPage","NextPage"})" GridLines="GridLine.Both" AllowGrouping="true" AllowPaging="true">
+                <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" ShowDeleteConfirmDialog="true" Mode="EditMode.Dialog"></GridEditSettings>
+                <GridEvents OnActionBegin="ActionBegin" OnActionComplete="OnActionComplete" TValue="Track"></GridEvents>
+                    <GridColumns>
+                    <GridColumn  Field=@nameof(Track.TrackId) IsPrimaryKey="true" Visible="false" AllowEditing="false" HeaderText="Track id" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Track.Name) HeaderText="Name" Width="150"></GridColumn>
+                    <GridForeignColumn  Field=@nameof(Track.AlbumId) HeaderText="Album id" ForeignKeyValue="Title" ForeignDataSource="@LookupAlbum" Width="150"></GridForeignColumn>
+                    <GridForeignColumn  Field=@nameof(Track.MediaTypeId) HeaderText="Media type id" ForeignKeyValue="Name" ForeignDataSource="@LookupMediaType" Width="150"></GridForeignColumn>
+                    <GridForeignColumn  Field=@nameof(Track.GenreId) HeaderText="Genre id" ForeignKeyValue="Name" ForeignDataSource="@LookupGenre" Width="150"></GridForeignColumn>
+                    <GridColumn  Field=@nameof(Track.Composer) HeaderText="Composer" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Track.Milliseconds) HeaderText="Milliseconds" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Track.Bytes) HeaderText="Bytes" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Track.UnitPrice) HeaderText="Unit price" Width="150"></GridColumn>
+                </GridColumns>
+            </SfGrid>
+        </div>
+    </div>
+</div>
+     
+     
+@code {
+
+    public List<Track> tracks { get; set; }
+    public List<Album> LookupAlbum { get; set; }
+public List<MediaType> LookupMediaType { get; set; }
+public List<Genre> LookupGenre { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        tracks = await client.GetFromJsonAsync<List<Track>>("api/track");
+        LookupAlbum = await client.GetFromJsonAsync<List<Album>>("api/album");
+LookupMediaType = await client.GetFromJsonAsync<List<MediaType>>("api/mediatype");
+LookupGenre = await client.GetFromJsonAsync<List<Genre>>("api/genre");
+    }
+
+    public async Task ActionBegin(ActionEventArgs<Track> args)
+    {
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+        {
+            var objTrack = new Track();
+            objTrack.TrackId = args.Data.TrackId;
+            objTrack.Name = args.Data.Name;
+            objTrack.AlbumId = args.Data.AlbumId;
+            objTrack.MediaTypeId = args.Data.MediaTypeId;
+            objTrack.GenreId = args.Data.GenreId;
+            objTrack.Composer = args.Data.Composer;
+            objTrack.Milliseconds = args.Data.Milliseconds;
+            objTrack.Bytes = args.Data.Bytes;
+            objTrack.UnitPrice = args.Data.UnitPrice;
+            
+            if (args.Data.TrackId == 0)
+            {
+                await client.PostAsJsonAsync("api/track", objTrack);
+                Console.WriteLine("Saved successfully");
+            }
+            else
+            {
+                await client.PutAsJsonAsync("api/track", objTrack);
+                Console.WriteLine("Updated successfully");
+            }
+ 
+        }
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Delete)
+        {
+            var id = args.Data.TrackId;
+            var res = await client.DeleteAsync($"api/track/{id}");
+            Console.WriteLine("Deleted successfully");
+        }
+    }
+
+    public async Task OnActionComplete(ActionEventArgs<Track> Args)
+    {
+        if (Args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+        {
+            tracks = await client.GetFromJsonAsync<List<Track>>("api/track");
+        }
+    }
+}
+
+

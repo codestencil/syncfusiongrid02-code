@@ -1,0 +1,87 @@
+@page "/invoice"
+@inject HttpClient client
+@using Syncfusion.Blazor.Grids
+@using MyApp6
+@using MyApp6.Shared.Model
+
+<h3>Invoice</h3>
+
+<div class="col-lg-12 control-section">
+    <div class="content-wrapper">
+        <div class="row">
+
+            <SfGrid DataSource="@invoices" Toolbar="@(new List<string> {"Add","Edit","Delete","Update","Cancel","Print" })"AllowExcelExport = "true" AllowPdfExport= "true" ContextMenuItems="@(new List<object>() { "AutoFit","AutoFitAll","SortAscending","SortDescending","Copy","Edit","Delete","Save","Cancel","PdfExport","ExcelExport","CsvExport","FirstPage","PrevPage","LastPage","NextPage"})" GridLines="GridLine.Both" AllowGrouping="true" AllowPaging="true">
+                <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" ShowDeleteConfirmDialog="true" Mode="EditMode.Dialog"></GridEditSettings>
+                <GridEvents OnActionBegin="ActionBegin" OnActionComplete="OnActionComplete" TValue="Invoice"></GridEvents>
+                    <GridColumns>
+                    <GridColumn  Field=@nameof(Invoice.InvoiceId) IsPrimaryKey="true" Visible="false" AllowEditing="false" HeaderText="Invoice id" Width="150"></GridColumn>
+                    <GridForeignColumn  Field=@nameof(Invoice.CustomerId) HeaderText="Customer id" ForeignKeyValue="FirstName" ForeignDataSource="@LookupCustomer" Width="150"></GridForeignColumn>
+                    <GridColumn  Field=@nameof(Invoice.InvoiceDate) HeaderText="Invoice date" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Invoice.BillingAddress) HeaderText="Billing address" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Invoice.BillingCity) HeaderText="Billing city" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Invoice.BillingState) HeaderText="Billing state" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Invoice.BillingCountry) HeaderText="Billing country" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Invoice.BillingPostalCode) HeaderText="Billing postal code" Width="150"></GridColumn>
+                    <GridColumn  Field=@nameof(Invoice.Total) HeaderText="Total" Width="150"></GridColumn>
+                </GridColumns>
+            </SfGrid>
+        </div>
+    </div>
+</div>
+     
+     
+@code {
+
+    public List<Invoice> invoices { get; set; }
+    public List<Customer> LookupCustomer { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        invoices = await client.GetFromJsonAsync<List<Invoice>>("api/invoice");
+        LookupCustomer = await client.GetFromJsonAsync<List<Customer>>("api/customer");
+    }
+
+    public async Task ActionBegin(ActionEventArgs<Invoice> args)
+    {
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+        {
+            var objInvoice = new Invoice();
+            objInvoice.InvoiceId = args.Data.InvoiceId;
+            objInvoice.CustomerId = args.Data.CustomerId;
+            objInvoice.InvoiceDate = args.Data.InvoiceDate;
+            objInvoice.BillingAddress = args.Data.BillingAddress;
+            objInvoice.BillingCity = args.Data.BillingCity;
+            objInvoice.BillingState = args.Data.BillingState;
+            objInvoice.BillingCountry = args.Data.BillingCountry;
+            objInvoice.BillingPostalCode = args.Data.BillingPostalCode;
+            objInvoice.Total = args.Data.Total;
+            
+            if (args.Data.InvoiceId == 0)
+            {
+                await client.PostAsJsonAsync("api/invoice", objInvoice);
+                Console.WriteLine("Saved successfully");
+            }
+            else
+            {
+                await client.PutAsJsonAsync("api/invoice", objInvoice);
+                Console.WriteLine("Updated successfully");
+            }
+ 
+        }
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Delete)
+        {
+            var id = args.Data.InvoiceId;
+            var res = await client.DeleteAsync($"api/invoice/{id}");
+            Console.WriteLine("Deleted successfully");
+        }
+    }
+
+    public async Task OnActionComplete(ActionEventArgs<Invoice> Args)
+    {
+        if (Args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+        {
+            invoices = await client.GetFromJsonAsync<List<Invoice>>("api/invoice");
+        }
+    }
+}
+
+
